@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cohere North · Value Appraisal Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #0a0d10;
+    --bg-1: #11161b;
+    --bg-2: #161c23;
+    --bg-3: #1e262e;
+    --border: #2a3440;
+    --border-bright: #3a4858;
+    --text-0: #f4f1ea;
+    --text-1: #c5cdd6;
+    --text-2: #8795a6;
+    --text-3: #5a6775;
+    --accent: #e8a34d;
+    --accent-bright: #f4c27a;
+    --accent-dim: #8a5c20;
+    --accent-fill: rgba(232, 163, 77, 0.12);
+    --positive: #6ac88a;
+    --negative: #e05a5a;
+    --shadow-deep: 0 24px 48px rgba(0,0,0,0.6);
+    --shadow-panel: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Global no-italics — override all user-agent defaults */
+  em, i, cite, address, dfn, var { font-style: normal; }
+
+  html, body {
+    background: var(--bg-0);
+    color: var(--text-0);
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse at top right, rgba(232,163,77,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom left, rgba(106,200,138,0.02) 0%, transparent 40%),
+      var(--bg-0);
+    min-height: 100vh;
+    background-attachment: fixed;
+  }
+
+  /* Subtle noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' /%3E%3C/svg%3E");
+  }
+
+  /* ==================== HEADER ==================== */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10, 13, 16, 0.85);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .brand-mark {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    padding-right: 4px;
+  }
+  .brand-mark img {
+    height: 100%;
+    width: auto;
+    display: block;
+    /* Dark-green wordmark needs lifting for legibility on dark header */
+    filter: brightness(1.45) saturate(1.1);
+  }
+
+  /* Vertical divider between logo and title */
+  .brand::after {
+    content: '';
+    width: 1px;
+    height: 28px;
+    background: var(--border);
+    margin-left: 4px;
+    order: 1;
+  }
+  .brand-mark { order: 0; }
+  .brand-text { order: 2; }
+
+  .brand-text {
+    display: flex; flex-direction: column;
+  }
+
+  .brand-title {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-weight: 500;
+    font-size: 18px;
+    letter-spacing: -0.3px;
+    line-height: 1;
+  }
+
+  .brand-subtitle {
+    font-size: 11px;
+    color: var(--text-2);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  .header-actions {
+    display: flex; gap: 8px; align-items: center;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-2);
+    color: var(--text-1);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.2px;
+  }
+  .btn:hover { background: var(--bg-3); border-color: var(--border-bright); color: var(--text-0); }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg-0);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--accent-bright); border-color: var(--accent-bright); color: var(--bg-0); }
+
+  /* ==================== LAYOUT ==================== */
+  .app {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 73px);
+    position: relative;
+    z-index: 2;
+  }
+
+  .sidebar {
+    background: var(--bg-1);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: sticky;
+    top: 73px;
+    height: calc(100vh - 73px);
+    overflow-y: auto;
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-3);
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding: 0 10px;
+  }
+
+  .usecase-list {
+    display: flex; flex-direction: column; gap: 4px;
+    margin-bottom: 28px;
+  }
+
+  .usecase-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-1);
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    width: 100%;
+  }
+  .usecase-btn:hover { background: var(--bg-2); }
+  .usecase-btn.active {
+    background: var(--accent-fill);
+    border-color: var(--accent-dim);
+    color: var(--accent-bright);
+  }
+
+  .usecase-icon {
+    width: 24px; height: 24px;
+    flex-shrink: 0;
+    color: var(--text-2);
+    margin-top: 1px;
+  }
+  .usecase-btn.active .usecase-icon { color: var(--accent); }
+
+  .usecase-body {
+    display: flex; flex-direction: column; min-width: 0;
+  }
+
+  .usecase-name {
+    font-size: 13px; font-weight: 500; line-height: 1.25;
+  }
+
+  .usecase-meta {
+    font-size: 10.5px;
+    color: var(--text-3);
+    margin-top: 3px;
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    letter-spacing: 0.3px;
+  }
+  .usecase-btn.active .usecase-meta { color: var(--accent-dim); }
+
+  .main {
+    padding: 32px 40px 64px;
+    max-width: 1400px;
+  }
+
+  /* ==================== USE CASE HEADER ==================== */
+  .uc-header {
+    margin-bottom: 28px;
+    animation: fadeUp 0.5s cubic-bezier(0.22, 0.9, 0.3, 1);
+  }
+
+  .uc-eyebrow {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .uc-title {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-weight: 400;
+    font-size: 38px;
+    line-height: 1.05;
+    letter-spacing: -0.8px;
+    color: var(--text-0);
+    margin-bottom: 8px;
+  }
+
+  .uc-title em {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .uc-description {
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.6;
+    max-width: 720px;
+  }
+
+  /* ==================== GRID ==================== */
+  .workbench {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 28px;
+  }
+
+  @media (max-width: 1100px) {
+    .workbench { grid-template-columns: 1fr; }
+    .app { grid-template-columns: 180px 1fr; }
+  }
+
+  /* ==================== PANELS ==================== */
+  .panel {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-panel);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+  }
+
+  .panel-title {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+    color: var(--text-0);
+  }
+
+  .panel-meta {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 10.5px;
+    color: var(--text-3);
+    letter-spacing: 0.5px;
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* ==================== INPUTS ==================== */
+  .input-section { margin-bottom: 24px; }
+  .input-section:last-child { margin-bottom: 0; }
+
+  .section-title {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::before {
+    content: '';
+    width: 3px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 1px;
+  }
+
+  .input-group {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 14px;
+    align-items: center;
+    padding: 6px 0;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .input-group:hover { background: rgba(255,255,255,0.015); }
+
+  .input-label {
+    font-size: 12.5px;
+    color: var(--text-1);
+    line-height: 1.35;
+    grid-column: 1;
+  }
+
+  .input-label-meta {
+    display: block;
+    font-size: 10px;
+    color: var(--text-3);
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+  }
+
+  .input-control {
+    display: flex; align-items: center;
+    gap: 4px;
+    grid-column: 2;
+  }
+
+  .input-field {
+    width: 92px;
+    background: var(--bg-0);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 10px;
+    color: var(--text-0);
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: right;
+    transition: all 0.15s;
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-2);
+    box-shadow: 0 0 0 3px rgba(232,163,77,0.1);
+  }
+  .input-field.key {
+    border-color: var(--accent-dim);
+    background: linear-gradient(180deg, rgba(232,163,77,0.04), rgba(232,163,77,0.08));
+  }
+
+  .input-unit {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 10.5px;
+    color: var(--text-3);
+    min-width: 42px;
+    text-align: left;
+  }
+
+  /* ==================== RESULTS ==================== */
+  .hero-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .hero-metric {
+    background: var(--bg-1);
+    padding: 20px 22px;
+    transition: background 0.3s;
+  }
+
+  .hero-metric.full { grid-column: 1 / -1; }
+
+  .hero-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-3);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .hero-value {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-weight: 500;
+    font-size: 36px;
+    line-height: 1;
+    letter-spacing: -1px;
+    color: var(--text-0);
+    font-feature-settings: "tnum";
+  }
+
+  .hero-value .sub {
+    font-size: 18px;
+    color: var(--text-2);
+    font-weight: 400;
+    letter-spacing: -0.3px;
+    margin-left: 4px;
+  }
+
+  .hero-value.accent { color: var(--accent); }
+  .hero-value.roi { color: var(--positive); }
+
+  .hero-detail {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 11px;
+    color: var(--text-2);
+    margin-top: 6px;
+    letter-spacing: 0.2px;
+  }
+
+  /* ==================== YEAR TABLE ==================== */
+  .year-table {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .year-table-header {
+    display: grid;
+    grid-template-columns: minmax(0,1.5fr) 1fr 1fr 1fr 1fr;
+    background: var(--bg-2);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    color: var(--text-3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .year-table-header > div {
+    padding: 10px 14px;
+    text-align: right;
+  }
+  .year-table-header > div:first-child { text-align: left; }
+
+  .year-table-row {
+    display: grid;
+    grid-template-columns: minmax(0,1.5fr) 1fr 1fr 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .year-table-row:last-child { border-bottom: none; }
+  .year-table-row:hover { background: var(--bg-2); }
+  .year-table-row.total { background: var(--bg-2); font-weight: 500; }
+  .year-table-row.highlight { background: rgba(232,163,77,0.06); }
+
+  .year-table-row > div {
+    padding: 9px 14px;
+    text-align: right;
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--text-0);
+  }
+  .year-table-row > div:first-child {
+    text-align: left;
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 12.5px;
+    color: var(--text-1);
+  }
+  .year-table-row.total > div { color: var(--text-0); font-weight: 600; }
+
+  .year-table-row.highlight > div { color: var(--accent-bright); }
+
+  /* ==================== DRIVER BARS ==================== */
+  .driver-list {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+
+  .driver-item {
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: var(--bg-2);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.15s;
+  }
+  .driver-item:hover { background: var(--bg-3); }
+
+  .driver-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+    position: relative; z-index: 2;
+  }
+
+  .driver-name {
+    font-size: 12.5px;
+    color: var(--text-0);
+    font-weight: 500;
+  }
+
+  .driver-value {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--accent-bright);
+    font-weight: 600;
+    font-feature-settings: "tnum";
+  }
+
+  .driver-subline {
+    display: flex; justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--text-3);
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    position: relative; z-index: 2;
+  }
+
+  .driver-bar {
+    height: 3px;
+    background: var(--bg-0);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+    position: relative; z-index: 2;
+  }
+
+  .driver-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-dim) 0%, var(--accent) 100%);
+    border-radius: 2px;
+    transition: width 0.6s cubic-bezier(0.22, 0.9, 0.3, 1);
+  }
+
+  /* ==================== CHART ==================== */
+  .chart-wrap {
+    background: var(--bg-2);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+
+  .chart-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-3);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    height: 180px;
+    padding: 0 20px;
+    position: relative;
+  }
+
+  .chart-bars::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chart-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    height: 100%;
+  }
+
+  .chart-stack {
+    width: 100%;
+    max-width: 72px;
+    display: flex;
+    flex-direction: column-reverse;
+    margin: auto auto 0;
+  }
+
+  .chart-segment {
+    width: 100%;
+    transition: all 0.6s cubic-bezier(0.22, 0.9, 0.3, 1);
+    position: relative;
+  }
+  .chart-segment:hover {
+    filter: brightness(1.15);
+  }
+
+  .chart-label {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 11px;
+    color: var(--text-2);
+    margin-top: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .chart-total {
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--text-0);
+    font-weight: 600;
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .chart-legend {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px;
+    color: var(--text-2);
+  }
+
+  .legend-swatch {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+  }
+
+  /* ==================== MISC ==================== */
+  .caveat {
+    margin-top: 20px;
+    padding: 12px 14px;
+    background: rgba(232,163,77,0.05);
+    border-left: 2px solid var(--accent);
+    border-radius: 4px;
+    font-size: 11.5px;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+
+  .caveat strong { color: var(--accent); font-weight: 600; }
+
+  /* Key input highlight */
+  .key-marker {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-left: 6px;
+    vertical-align: 1px;
+  }
+
+  /* ==================== ANIMATIONS ==================== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes countUp {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .counting { animation: countUp 0.3s ease; }
+
+  .hidden { display: none !important; }
+
+  /* ==================== SCROLLBAR ==================== */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-0); }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+
+  /* Print-friendly export snapshot */
+  @media print {
+    .sidebar, .app-header { display: none; }
+    .app { grid-template-columns: 1fr; }
+    .main { padding: 0; }
+    body { background: white; color: black; }
+    .panel { border: 1px solid #ccc; background: white; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-mark"><img src="data:image/png;base64,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" alt="Cohere"></div>
+    <div class="brand-text">
+      <div class="brand-title">Value Appraisal Console</div>
+      <div class="brand-subtitle">North · Agentic AI for Upstream</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn" id="btn-reset" title="Reset current use case to default assumptions">Reset Defaults</button>
+    <button class="btn btn-primary" id="btn-export">Export Snapshot</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-label">Use Cases</div>
+    <div class="usecase-list" id="usecase-list">
+      <!-- injected -->
+    </div>
+    <div class="sidebar-label">Legend</div>
+    <div style="padding: 0 10px; font-size: 11.5px; color: var(--text-2); line-height: 1.7;">
+      <div><span class="key-marker"></span> Key driver (most sensitive)</div>
+      <div style="margin-top:6px; font-family: 'Space Grotesk', -apple-system, sans-serif; font-size: 10px; color: var(--text-3); letter-spacing: 0.4px;">Changes recalculate instantly</div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <!-- Use case header -->
+    <div class="uc-header" id="uc-header"></div>
+
+    <div class="workbench">
+      <!-- INPUTS -->
+      <section class="panel" id="inputs-panel">
+        <div class="panel-header">
+          <div class="panel-title">Assumptions</div>
+          <div class="panel-meta" id="inputs-count">—</div>
+        </div>
+        <div class="panel-body" id="inputs-body"></div>
+      </section>
+
+      <!-- RESULTS -->
+      <section class="panel" id="results-panel">
+        <div class="panel-header">
+          <div class="panel-title">Live Results</div>
+          <div class="panel-meta">3-Year Projection · $USD</div>
+        </div>
+        <div class="panel-body" id="results-body"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+// ============================================================
+// USE CASE DEFINITIONS
+// ============================================================
+
+const CohereFees = {
+  y1: { label: 'Cohere fee — Year 1',    default: 250000,  key: true, unit: '$' },
+  y2: { label: 'Cohere fee — Year 2',    default: 1400000, key: true, unit: '$' },
+  y3: { label: 'Cohere fee — Year 3',    default: 3500000, key: true, unit: '$' },
+};
+
+const UserRamp = {
+  y1: { label: 'Users — Year 1',  default: 100,  key: true, unit: 'users' },
+  y2: { label: 'Users — Year 2',  default: 900,  key: true, unit: 'users' },
+  y3: { label: 'Users — Year 3',  default: 2500, key: true, unit: 'users' },
+};
+
+// Icon set (inline SVG, 24x24)
+const Icons = {
+  field: `<svg class="usecase-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 18v-6a9 9 0 1 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3v4zM3 19a2 2 0 0 0 2 2h1v-6H3v4z"/></svg>`,
+  safety: `<svg class="usecase-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>`,
+  prod: `<svg class="usecase-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>`,
+  jobplan: `<svg class="usecase-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2h8l4 4v14a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/><path d="M9 17h6"/></svg>`,
+  workforce: `<svg class="usecase-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><circle cx="17" cy="8" r="2.5"/><path d="M21 21v-1.5a3 3 0 00-2.5-3"/></svg>`,
+};
+
+// ============================================================
+// USE CASE 1: FIELD TECHNICIAN ASSISTANT
+// ============================================================
+const UC_FIELD = {
+  id: 'field',
+  icon: Icons.field,
+  name: 'Field Technician Assistant',
+  meta: '1,200 wells · Permian',
+  title: 'Field <em>Technician</em> Assistant',
+  eyebrow: 'Use Case · 01',
+  description: 'Mid-size E&P, 1,200 unconventional wells in the Permian with ESP/rod-lift fleet. Agent supports alarm triage, guided procedures, work-order drafting, and failure-history retrieval.',
+  sections: [
+    { title: 'Operating Scale', inputs: [
+      { id: 'wells',       label: 'Total wells in portfolio', default: 1200, unit: 'wells' },
+      { id: 'crew',        label: 'Field technician crew (Y1)', default: 100, unit: 'FTEs', key: true },
+    ]},
+    { title: 'Production Economics', inputs: [
+      { id: 'oil_price',   label: 'Oil price (WTI realized)', default: 80, unit: '$/bbl', key: true },
+      { id: 'well_prod',   label: 'Avg. well gross production', default: 350, unit: 'bbl/d' },
+      { id: 'nri',         label: 'Net revenue interest', default: 0.80, unit: '%', pct: true },
+      { id: 'var_loe',     label: 'Variable LOE per bbl', default: 8, unit: '$/bbl' },
+    ]},
+    { title: 'Downtime & Alarms', inputs: [
+      { id: 'alarms',      label: 'Alarm events per well / yr', default: 18, unit: 'events' },
+      { id: 'field_resp',  label: '% alarms requiring field response', default: 0.55, unit: '%', pct: true },
+      { id: 'downtime_hr', label: 'Avg. downtime per event', default: 9, unit: 'hours' },
+      { id: 'dt_reduct',   label: 'Downtime reduction with agent', default: 0.30, unit: '%', pct: true, key: true },
+      { id: 'prod_impact', label: 'Production impact multiplier', default: 0.40, unit: '%', pct: true },
+    ]},
+    { title: 'Truck Rolls', inputs: [
+      { id: 'rolls',       label: 'Truck rolls per well / yr', default: 14, unit: 'rolls' },
+      { id: 'roll_cost',   label: 'Fully-loaded cost per roll', default: 850, unit: '$' },
+      { id: 'roll_reduct', label: 'Truck-roll reduction', default: 0.15, unit: '%', pct: true, key: true },
+    ]},
+    { title: 'Technician Productivity', inputs: [
+      { id: 'tech_cost',   label: 'Fully-loaded tech cost / yr', default: 135000, unit: '$/FTE' },
+      { id: 'admin_time',  label: 'Admin & search time (baseline)', default: 0.28, unit: '%', pct: true },
+      { id: 'admin_red',   label: 'Admin time reduction', default: 0.40, unit: '%', pct: true, key: true },
+      { id: 'capture',     label: 'Capturable productivity factor', default: 0.50, unit: '%', pct: true },
+    ]},
+    { title: 'Work Order Quality', inputs: [
+      { id: 'wos',         label: 'Work orders per well / yr', default: 22, unit: 'WOs' },
+      { id: 'rework_rate', label: 'Rework / miscoded rate', default: 0.12, unit: '%', pct: true },
+      { id: 'rework_cost', label: 'Rework cost per WO', default: 180, unit: '$' },
+      { id: 'dq_imp',      label: 'Data quality improvement', default: 0.50, unit: '%', pct: true },
+    ]},
+    { title: 'Safety', inputs: [
+      { id: 'recordables', label: 'Recordables per 100 FTE / yr', default: 1.2, unit: 'incidents' },
+      { id: 'incident_cost', label: 'Cost per recordable', default: 85000, unit: '$' },
+      { id: 'inc_reduct',  label: 'Incident reduction', default: 0.10, unit: '%', pct: true },
+    ]},
+    { title: 'Cohere North Platform', inputs: [
+      { id: 'users_y1',    label: 'Users — Year 1', default: 100, unit: 'users', key: true },
+      { id: 'users_y2',    label: 'Users — Year 2', default: 900, unit: 'users', key: true },
+      { id: 'users_y3',    label: 'Users — Year 3', default: 2500, unit: 'users', key: true },
+      { id: 'fee_y1',      label: 'Cohere fee — Year 1', default: 250000, unit: '$', key: true },
+      { id: 'fee_y2',      label: 'Cohere fee — Year 2', default: 1400000, unit: '$', key: true },
+      { id: 'fee_y3',      label: 'Cohere fee — Year 3', default: 3500000, unit: '$', key: true },
+      { id: 'rf_y1',       label: 'Value realization factor — Y1', default: 1.0, unit: 'x', key: true },
+      { id: 'rf_y2',       label: 'Value realization factor — Y2', default: 2.0, unit: 'x', key: true },
+      { id: 'rf_y3',       label: 'Value realization factor — Y3', default: 2.5, unit: 'x', key: true },
+    ]},
+  ],
+  compute(i) {
+    const netback = i.oil_price * i.nri - i.var_loe;
+    const events = i.wells * i.alarms * i.field_resp;
+    const hoursAvoided = events * i.downtime_hr * i.dt_reduct;
+    const bblsRecovered = (hoursAvoided / 24) * i.well_prod * i.prod_impact;
+    const deferredBase = bblsRecovered * netback;
+
+    const totalRolls = i.wells * i.rolls;
+    const truckBase = totalRolls * i.roll_reduct * i.roll_cost;
+
+    // productivity applies to users (capped)
+    const prod = (users) => {
+      const cap = Math.min(users, 1500);
+      return cap * i.tech_cost * i.admin_time * i.admin_red * i.capture;
+    };
+
+    const dqBase = i.wells * i.wos * i.rework_rate * i.rework_cost * i.dq_imp;
+
+    const safetyBase = (users) => {
+      const cap = Math.min(users, 1500);
+      return (cap / 100) * i.recordables * i.inc_reduct * i.incident_cost;
+    };
+
+    const years = [
+      { rf: i.rf_y1, users: i.users_y1, fee: i.fee_y1 },
+      { rf: i.rf_y2, users: i.users_y2, fee: i.fee_y2 },
+      { rf: i.rf_y3, users: i.users_y3, fee: i.fee_y3 },
+    ];
+
+    const rows = years.map(y => ({
+      deferred:  deferredBase * y.rf,
+      truck:     truckBase * y.rf,
+      prod:      prod(y.users),
+      dq:        dqBase * y.rf,
+      safety:    safetyBase(y.users),
+      users:     y.users,
+      fee:       y.fee,
+    }));
+
+    rows.forEach(r => { r.gross = r.deferred + r.truck + r.prod + r.dq + r.safety; r.net = r.gross - r.fee; r.roi = r.gross / (r.fee || 1); });
+
+    return {
+      years: rows,
+      drivers: [
+        { name: 'Deferred production',     key: 'deferred' },
+        { name: 'Truck-roll reduction',    key: 'truck' },
+        { name: 'Technician productivity', key: 'prod' },
+        { name: 'Work order quality',      key: 'dq' },
+        { name: 'Safety & incidents',      key: 'safety' },
+      ],
+      context: { netback, eventsPerYear: events }
+    };
+  }
+};
+
+
+// ============================================================
+// USE CASE 2: SAFETY INCIDENT AGENT
+// ============================================================
+const UC_SAFETY = {
+  id: 'safety',
+  icon: Icons.safety,
+  name: 'Safety Incident Agent',
+  meta: '2,000 FTE · $3.5B CAPEX',
+  title: 'Safety <em>Incident</em> Agent',
+  eyebrow: 'Use Case · 02',
+  description: 'Mid-large independent Permian operator, 2,000 employees plus contractor workforce, $3.5B annual CAPEX. Agent accelerates incident investigation, automates JSA/prequal workflows, and predicts precursor signals.',
+  sections: [
+    { title: 'Operational Scale', inputs: [
+      { id: 'ftes',       label: 'Total employees (FTE)', default: 2000, unit: 'FTE', key: true },
+      { id: 'contr_ratio', label: 'Contractor-to-employee ratio', default: 1.5, unit: 'ratio' },
+      { id: 'prod_bpd',   label: 'Daily production', default: 500000, unit: 'bbl/d' },
+      { id: 'capex',      label: 'Annual CAPEX spend', default: 3500000000, unit: '$', key: true },
+      { id: 'hrs',        label: 'Hours / FTE / yr', default: 2000, unit: 'hrs' },
+    ]},
+    { title: 'Safety Baseline', inputs: [
+      { id: 'trir',       label: 'TRIR (baseline)', default: 0.75, unit: 'per 200K', key: true },
+      { id: 'ltir',       label: 'LTIR (baseline)', default: 0.45, unit: 'per 200K', key: true },
+      { id: 'sig',        label: 'Significant incidents / yr', default: 12, unit: 'incidents', key: true },
+      { id: 'cost_rec',   label: 'Cost per recordable', default: 65000, unit: '$' },
+      { id: 'cost_lti',   label: 'Cost per lost-time incident', default: 180000, unit: '$' },
+      { id: 'cost_sig',   label: 'Cost per significant incident', default: 850000, unit: '$' },
+    ]},
+    { title: 'Incident Reduction', inputs: [
+      { id: 'trir_red',   label: 'TRIR/LTIR reduction (agent)', default: 0.15, unit: '%', pct: true, key: true },
+      { id: 'sig_red',    label: 'Significant incident reduction', default: 0.20, unit: '%', pct: true, key: true },
+      { id: 'inv_hrs',    label: 'Investigation hrs per significant', default: 90, unit: 'hrs' },
+      { id: 'inv_red',    label: 'Investigation time reduction', default: 0.40, unit: '%', pct: true, key: true },
+      { id: 'inv_rate',   label: 'Investigator $/hr', default: 125, unit: '$/hr' },
+    ]},
+    { title: 'Lost Time', inputs: [
+      { id: 'days_lti',   label: 'Avg days away per LTI', default: 15, unit: 'days' },
+      { id: 'cost_day',   label: 'Cost per lost day', default: 650, unit: '$/day' },
+    ]},
+    { title: 'CAPEX Stop-Work', inputs: [
+      { id: 'capex_exp',  label: 'CAPEX exposed to stoppages', default: 0.60, unit: '%', pct: true },
+      { id: 'stop_rate',  label: 'Baseline stoppage loss rate', default: 0.010, unit: '%', pct: true },
+      { id: 'stop_red',   label: 'Stoppage reduction (agent)', default: 0.20, unit: '%', pct: true, key: true },
+      { id: 'margin',     label: 'Margin impact of delay $', default: 0.25, unit: '%', pct: true },
+    ]},
+    { title: 'Contractor Safety', inputs: [
+      { id: 'prequals',   label: 'Prequal reviews / yr', default: 1200, unit: 'reviews' },
+      { id: 'prequal_hrs', label: 'Hrs per prequal (baseline)', default: 4, unit: 'hrs' },
+      { id: 'prequal_red', label: 'Prequal time reduction', default: 0.50, unit: '%', pct: true, key: true },
+      { id: 'prequal_rate', label: 'Reviewer $/hr', default: 95, unit: '$/hr' },
+    ]},
+    { title: 'Regulatory & Insurance', inputs: [
+      { id: 'wc_premium', label: 'WC + GL premium / yr', default: 12000000, unit: '$' },
+      { id: 'prem_red',   label: 'Premium reduction (EMR)', default: 0.03, unit: '%', pct: true, key: true },
+      { id: 'osha_avoid', label: 'OSHA exposure avoided / yr', default: 150000, unit: '$' },
+    ]},
+    { title: 'Cohere North Platform', inputs: [
+      { id: 'users_y1',    label: 'Users — Year 1', default: 100, unit: 'users', key: true },
+      { id: 'users_y2',    label: 'Users — Year 2', default: 900, unit: 'users', key: true },
+      { id: 'users_y3',    label: 'Users — Year 3', default: 2500, unit: 'users', key: true },
+      { id: 'fee_y1',      label: 'Cohere fee — Year 1', default: 250000, unit: '$', key: true },
+      { id: 'fee_y2',      label: 'Cohere fee — Year 2', default: 1400000, unit: '$', key: true },
+      { id: 'fee_y3',      label: 'Cohere fee — Year 3', default: 3500000, unit: '$', key: true },
+      { id: 'rf_y1',       label: 'Value realization — Y1', default: 1.0, unit: 'x', key: true },
+      { id: 'rf_y2',       label: 'Value realization — Y2', default: 2.0, unit: 'x', key: true },
+      { id: 'rf_y3',       label: 'Value realization — Y3', default: 2.5, unit: 'x', key: true },
+    ]},
+  ],
+  compute(i) {
+    const workforce = i.ftes + (i.ftes * i.contr_ratio);
+    const totalHrs = workforce * i.hrs;
+    const recordables = i.trir * totalHrs / 200000;
+    const ltis = i.ltir * totalHrs / 200000;
+
+    // Incident avoidance (base, before realization)
+    const incBase = recordables * i.cost_rec * i.trir_red
+                  + ltis * i.cost_lti * i.trir_red
+                  + i.sig * i.cost_sig * i.sig_red;
+
+    // CAPEX stop-work
+    const capexBase = i.capex * i.capex_exp * i.stop_rate * i.stop_red * i.margin;
+
+    // Investigation
+    const investigations = recordables + i.sig;
+    const invHoursSaved = investigations * i.inv_hrs * i.inv_red;
+    const invBase = invHoursSaved * i.inv_rate;
+
+    // Lost time
+    const ltisAvoided = ltis * i.trir_red;
+    const ltBase = ltisAvoided * i.days_lti * i.cost_day;
+
+    // Contractor
+    const contrBase = i.prequals * i.prequal_hrs * i.prequal_red * i.prequal_rate;
+
+    // Premium phase-in [0%, 50%, 100%]
+    const premiumY1 = 0;
+    const premiumY2 = i.wc_premium * i.prem_red * 0.5;
+    const premiumY3 = i.wc_premium * i.prem_red * 1.0;
+    const regBase = (y) => (y === 1 ? premiumY1 : y === 2 ? premiumY2 : premiumY3) + i.osha_avoid;
+
+    const years = [
+      { rf: i.rf_y1, users: i.users_y1, fee: i.fee_y1 },
+      { rf: i.rf_y2, users: i.users_y2, fee: i.fee_y2 },
+      { rf: i.rf_y3, users: i.users_y3, fee: i.fee_y3 },
+    ];
+
+    const rows = years.map((y, idx) => ({
+      incident: incBase * y.rf,
+      capex:    capexBase * y.rf,
+      investigation: invBase * y.rf,
+      losttime: ltBase * y.rf,
+      contractor: contrBase * y.rf,
+      regulatory: regBase(idx + 1),
+      users: y.users,
+      fee:   y.fee,
+    }));
+    rows.forEach(r => { r.gross = r.incident + r.capex + r.investigation + r.losttime + r.contractor + r.regulatory; r.net = r.gross - r.fee; r.roi = r.gross / (r.fee || 1); });
+
+    return {
+      years: rows,
+      drivers: [
+        { name: 'Incident avoidance',     key: 'incident' },
+        { name: 'CAPEX stop-work',        key: 'capex' },
+        { name: 'Investigation & RCA',    key: 'investigation' },
+        { name: 'Lost-time productivity', key: 'losttime' },
+        { name: 'Contractor safety',      key: 'contractor' },
+        { name: 'Regulatory & insurance', key: 'regulatory' },
+      ],
+      context: { recordables, ltis, workforce }
+    };
+  }
+};
+
+
+// ============================================================
+// USE CASE 3: PRODUCTION LOSS RECOVERY
+// ============================================================
+const UC_PROD = {
+  id: 'prod',
+  icon: Icons.prod,
+  name: 'Production Loss Recovery',
+  meta: '840 kboed · Multi-basin',
+  title: 'Production <em>Loss</em> Recovery',
+  eyebrow: 'Use Case · 03',
+  description: 'Large independent operator, 840 kboed across Delaware, Williston, Eagle Ford, Anadarko, Powder River. Agent reduces externally-driven curtailments from pipelines, weather, power, logistics, midstream, and dispatch.',
+  sections: [
+    { title: 'Production Profile', inputs: [
+      { id: 'prod_total', label: 'Total operated production', default: 840000, unit: 'BOE/d', key: true },
+      { id: 'days',       label: 'Operating days / yr', default: 365, unit: 'days' },
+      { id: 'realized',   label: 'Realized revenue (modeled)', default: 45, unit: '$/BOE', key: true },
+      { id: 'loe',        label: 'Variable LOE per BOE', default: 9, unit: '$/BOE' },
+      { id: 'royalty',    label: 'Royalties & prod. taxes', default: 0.22, unit: '%', pct: true },
+    ]},
+    { title: 'Baseline Deferred Production', inputs: [
+      { id: 'd_pipe',     label: 'Pipeline takeaway deferral', default: 0.010, unit: '%', pct: true, key: true },
+      { id: 'd_facility', label: 'Third-party facility outages', default: 0.005, unit: '%', pct: true, key: true },
+      { id: 'd_weather',  label: 'Weather impacts', default: 0.005, unit: '%', pct: true, key: true },
+      { id: 'd_power',    label: 'Power outages & electrical', default: 0.003, unit: '%', pct: true, key: true },
+      { id: 'd_truck',    label: 'Trucking / logistics delays', default: 0.002, unit: '%', pct: true, key: true },
+      { id: 'd_workforce', label: 'Workforce & dispatch', default: 0.002, unit: '%', pct: true, key: true },
+    ]},
+    { title: 'Agent Recovery Rates', inputs: [
+      { id: 'r_pipe',     label: 'Pipeline — recovery %', default: 0.15, unit: '%', pct: true, key: true },
+      { id: 'r_facility', label: 'Third-party facility — recovery %', default: 0.12, unit: '%', pct: true, key: true },
+      { id: 'r_weather',  label: 'Weather — recovery %', default: 0.20, unit: '%', pct: true, key: true },
+      { id: 'r_power',    label: 'Power — recovery %', default: 0.18, unit: '%', pct: true, key: true },
+      { id: 'r_truck',    label: 'Trucking & logistics — recovery %', default: 0.25, unit: '%', pct: true, key: true },
+      { id: 'r_workforce', label: 'Workforce & dispatch — recovery %', default: 0.30, unit: '%', pct: true, key: true },
+    ]},
+    { title: 'Value Adjustments', inputs: [
+      { id: 'capture',    label: 'Netback capture factor', default: 0.85, unit: '%', pct: true, key: true },
+      { id: 'hedge',      label: 'Hedge overlap haircut', default: 0.05, unit: '%', pct: true },
+    ]},
+    { title: 'Cohere North Platform', inputs: [
+      { id: 'users_y1',   label: 'Users — Year 1', default: 100, unit: 'users', key: true },
+      { id: 'users_y2',   label: 'Users — Year 2', default: 900, unit: 'users', key: true },
+      { id: 'users_y3',   label: 'Users — Year 3', default: 2500, unit: 'users', key: true },
+      { id: 'fee_y1',     label: 'Cohere fee — Year 1', default: 250000, unit: '$', key: true },
+      { id: 'fee_y2',     label: 'Cohere fee — Year 2', default: 1400000, unit: '$', key: true },
+      { id: 'fee_y3',     label: 'Cohere fee — Year 3', default: 3500000, unit: '$', key: true },
+      { id: 'rf_y1',      label: 'Value realization — Y1', default: 0.50, unit: '%', pct: true, key: true },
+      { id: 'rf_y2',      label: 'Value realization — Y2', default: 0.80, unit: '%', pct: true, key: true },
+      { id: 'rf_y3',      label: 'Value realization — Y3', default: 1.00, unit: '%', pct: true, key: true },
+    ]},
+  ],
+  compute(i) {
+    const netback = (i.realized * (1 - i.royalty) - i.loe) * i.capture * (1 - i.hedge);
+
+    const cats = [
+      { name: 'Pipeline takeaway',    defer: i.d_pipe,     rec: i.r_pipe,     key: 'pipe' },
+      { name: 'Third-party facility', defer: i.d_facility, rec: i.r_facility, key: 'facility' },
+      { name: 'Weather',              defer: i.d_weather,  rec: i.r_weather,  key: 'weather' },
+      { name: 'Power',                defer: i.d_power,    rec: i.r_power,    key: 'power' },
+      { name: 'Trucking & logistics', defer: i.d_truck,    rec: i.r_truck,    key: 'truck' },
+      { name: 'Workforce & dispatch', defer: i.d_workforce, rec: i.r_workforce, key: 'workforce' },
+    ];
+
+    const years = [
+      { rf: i.rf_y1, users: i.users_y1, fee: i.fee_y1 },
+      { rf: i.rf_y2, users: i.users_y2, fee: i.fee_y2 },
+      { rf: i.rf_y3, users: i.users_y3, fee: i.fee_y3 },
+    ];
+
+    const rows = years.map(y => {
+      const row = { users: y.users, fee: y.fee, boedRecovered: 0 };
+      cats.forEach(c => {
+        const boed = i.prod_total * c.defer * c.rec * y.rf;
+        const value = boed * i.days * netback;
+        row[c.key] = value;
+        row.boedRecovered += boed;
+      });
+      return row;
+    });
+
+    rows.forEach(r => {
+      r.gross = cats.reduce((s, c) => s + r[c.key], 0);
+      r.net = r.gross - r.fee;
+      r.roi = r.gross / (r.fee || 1);
+    });
+
+    return {
+      years: rows,
+      drivers: cats.map(c => ({ name: c.name, key: c.key })),
+      context: { netback, totalDeferral: cats.reduce((s,c)=>s+c.defer,0), totalBoedBase: i.prod_total * cats.reduce((s,c)=>s+c.defer,0) }
+    };
+  }
+};
+
+
+// ============================================================
+// USE CASE 4: JOB PLANNING AGENT
+// ============================================================
+//
+// Production scope: Global oilfield-services delivery across ~45 districts
+// × 3 service lines (wireline, drilling, completions). 3-year rollout.
+// ~5,000 jobs/month at steady state; ~400 DTPs in scope.
+//
+const UC_JOBPLAN = {
+  id: 'jobplan',
+  icon: Icons.jobplan,
+  name: 'Job Planning Agent',
+  meta: '~45 districts · Global OFS',
+  title: 'Job <em>Planning</em> Agent',
+  eyebrow: 'Use Case · 04',
+  description: 'Agentic job planning for an oilfield services delivery organization. Reads ERP, engineering libraries, offset wells, and historical job data to draft field-ready plans that a DTP reviews rather than authors — across all service lines and districts. Modeled as a 3-year production rollout with realization scaling from pilot cohort to enterprise adoption.',
+  sections: [
+    { title: 'Operating Scale (Global)', inputs: [
+      { id: 'jobs_month',   label: 'Jobs per month (global, all service lines)', default: 5000, unit: 'jobs', key: true },
+      { id: 'dtps',         label: 'DTPs in scope (global)',         default: 400, unit: 'FTEs' },
+      { id: 'eng_leads',    label: 'Engineering Leads in scope',     default: 45,  unit: 'FTEs' },
+    ]},
+    { title: 'Current-State Planner Effort', inputs: [
+      { id: 'hrs_baseline', label: 'Planner hours per job (baseline)', default: 12,  unit: 'hrs', key: true },
+      { id: 'hrs_future',   label: 'Planner hours per job (future)',   default: 6, unit: 'hrs', key: true },
+      { id: 'planner_rate', label: 'Fully-loaded planner $/hr',        default: 110, unit: '$/hr' },
+    ]},
+    { title: 'Cycle Time & Revenue', inputs: [
+      { id: 'cycle_base',    label: 'Cycle time baseline (award→field-ready)', default: 3.0, unit: 'days' },
+      { id: 'cycle_future',  label: 'Cycle time future',               default: 1.5, unit: 'days', key: true },
+      { id: 'global_rev',    label: 'Global annualized service-line revenue', default: 4000000000, unit: '$', key: true },
+      { id: 'cycle_margin_uplift', label: 'Margin uplift on cycle-sensitive revenue', default: 0.0015, unit: '%', pct: true, key: true },
+    ]},
+    { title: 'Plan Quality & Rework', inputs: [
+      { id: 'pass_base',    label: 'First-pass approval rate (baseline)', default: 0.55, unit: '%', pct: true },
+      { id: 'pass_future',  label: 'First-pass approval rate (future)',   default: 0.75, unit: '%', pct: true, key: true },
+      { id: 'rework_hrs',   label: 'Rework hours per sent-back plan',     default: 4.0, unit: 'hrs' },
+    ]},
+    { title: 'Plan-Defect NPT Avoidance', inputs: [
+      { id: 'npt_rate_base',  label: 'Jobs with plan-defect NPT (baseline)', default: 0.06, unit: '%', pct: true },
+      { id: 'npt_rate_future', label: 'Jobs with plan-defect NPT (future)',  default: 0.04, unit: '%', pct: true, key: true },
+      { id: 'npt_hours_avg',  label: 'Avg NPT hours per defect event',       default: 6, unit: 'hrs' },
+      { id: 'npt_cost_hour',  label: 'Cost exposure per NPT hour',           default: 3500, unit: '$/hr' },
+    ]},
+    { title: 'Knowledge Capture', inputs: [
+      { id: 'senior_share',    label: 'Share of jobs dependent on senior DTP judgment', default: 0.30, unit: '%', pct: true },
+      { id: 'knowledge_uplift', label: 'Junior DTP uplift from agent-assisted plans', default: 0.15, unit: '%', pct: true, key: true },
+    ]},
+    { title: 'Cohere North Platform', inputs: [
+      { id: 'users_y1',    label: 'Users — Year 1', default: 100, unit: 'users', key: true },
+      { id: 'users_y2',    label: 'Users — Year 2', default: 900, unit: 'users', key: true },
+      { id: 'users_y3',    label: 'Users — Year 3', default: 2500, unit: 'users', key: true },
+      { id: 'fee_y1',      label: 'Cohere fee — Year 1', default: 250000, unit: '$', key: true },
+      { id: 'fee_y2',      label: 'Cohere fee — Year 2', default: 1400000, unit: '$', key: true },
+      { id: 'fee_y3',      label: 'Cohere fee — Year 3', default: 3500000, unit: '$', key: true },
+      { id: 'rf_y1',       label: 'Value realization — Y1', default: 0.50, unit: '%', pct: true, key: true },
+      { id: 'rf_y2',       label: 'Value realization — Y2', default: 0.80, unit: '%', pct: true, key: true },
+      { id: 'rf_y3',       label: 'Value realization — Y3', default: 1.00, unit: '%', pct: true, key: true },
+    ]},
+  ],
+  compute(i) {
+    const jobsYearFull = i.jobs_month * 12;
+
+    // Per-job value components (at full realization)
+    const hoursSavedPerJob = i.hrs_baseline - i.hrs_future;
+    const plannerPerJob = hoursSavedPerJob * i.planner_rate;
+
+    const reworkDelta = (1 - i.pass_base) - (1 - i.pass_future);
+    const reworkPerJob = reworkDelta * i.rework_hrs * i.planner_rate;
+
+    const nptRateDelta = i.npt_rate_base - i.npt_rate_future;
+    const nptPerJob = nptRateDelta * i.npt_hours_avg * i.npt_cost_hour;
+
+    const knowledgePerJob = i.senior_share * hoursSavedPerJob * i.knowledge_uplift * i.planner_rate;
+
+    // Full-realization annual per-category value
+    const plannerBase   = jobsYearFull * plannerPerJob;
+    const reworkBase    = jobsYearFull * reworkPerJob;
+    const nptBase       = jobsYearFull * nptPerJob;
+    const knowledgeBase = jobsYearFull * knowledgePerJob;
+
+    // Cycle-time value: margin uplift on cycle-sensitive revenue, scaled by the
+    // fractional improvement in cycle time (faster planning = more capacity through the funnel)
+    const daysSaved = i.cycle_base - i.cycle_future;
+    const cycleFrac = i.cycle_base > 0 ? daysSaved / i.cycle_base : 0;
+    const cycleBase = i.global_rev * i.cycle_margin_uplift * cycleFrac;
+
+    const years = [
+      { rf: i.rf_y1, users: i.users_y1, fee: i.fee_y1 },
+      { rf: i.rf_y2, users: i.users_y2, fee: i.fee_y2 },
+      { rf: i.rf_y3, users: i.users_y3, fee: i.fee_y3 },
+    ];
+
+    const rows = years.map(y => ({
+      planner:   plannerBase * y.rf,
+      cycle:     cycleBase * y.rf,
+      rework:    reworkBase * y.rf,
+      npt:       nptBase * y.rf,
+      knowledge: knowledgeBase * y.rf,
+      users:     y.users,
+      fee:       y.fee,
+    }));
+    rows.forEach(r => {
+      r.gross = r.planner + r.cycle + r.rework + r.npt + r.knowledge;
+      r.net = r.gross - r.fee;
+      r.roi = r.gross / (r.fee || 1);
+    });
+
+    return {
+      years: rows,
+      drivers: [
+        { name: 'Planner hours saved',      key: 'planner' },
+        { name: 'Cycle-time value',         key: 'cycle' },
+        { name: 'Rework elimination',       key: 'rework' },
+        { name: 'Plan-defect NPT avoided',  key: 'npt' },
+        { name: 'Knowledge capture uplift', key: 'knowledge' },
+      ],
+      context: {
+        jobsYearFull,
+        hoursSavedPerJob,
+      }
+    };
+  }
+};
+
+
+// ============================================================
+// USE CASE 5: WORKFORCE OPERATIONS AGENT
+// ============================================================
+//
+// Production scope: Global OFS workforce operations — recruiting, certification,
+// JD lifecycle, training, and field-alignment coordination. ~15,000 employees
+// in scope across global footprint. 3-year production rollout.
+//
+const UC_WORKFORCE = {
+  id: 'workforce',
+  icon: Icons.workforce,
+  name: 'Workforce Operations Agent',
+  meta: '~15,000 FTEs · Global HR',
+  title: 'Workforce <em>Operations</em> Agent',
+  eyebrow: 'Use Case · 05',
+  description: 'Agentic workforce operations at enterprise scale — job-description lifecycle, certification tracking, personalized training, recruiting, and field readiness. Integrates with HRIS, LMS, and field ops systems to accelerate time-to-fill, eliminate certification gaps before mobilization, and redirect wasted training investment. Modeled as a 3-year production rollout across the full workforce footprint.',
+  sections: [
+    { title: 'Workforce Scope (Global)', inputs: [
+      { id: 'ftes',         label: 'Field-facing FTEs (global)',     default: 15000, unit: 'FTEs', key: true },
+      { id: 'hrbps',        label: 'HRBPs supporting scope',         default: 40,    unit: 'FTEs' },
+      { id: 'recruiters',   label: 'Recruiters supporting scope',    default: 35,    unit: 'FTEs' },
+      { id: 'coordinators', label: 'Ops / training coordinators',    default: 60,    unit: 'FTEs' },
+    ]},
+    { title: 'Recruiting — Time-to-Fill', inputs: [
+      { id: 'reqs_year',    label: 'Reqs opened per year',           default: 1500, unit: 'reqs', key: true },
+      { id: 'ttf_base',     label: 'Time-to-fill baseline',          default: 65,   unit: 'days', key: true },
+      { id: 'ttf_future',   label: 'Time-to-fill future',            default: 50,   unit: 'days', key: true },
+      { id: 'vacancy_cost_day',  label: 'Daily crew-capacity exposure per vacancy', default: 850, unit: '$/day' },
+      { id: 'recruiter_hrs',     label: 'Recruiter hrs saved per req', default: 10, unit: 'hrs' },
+      { id: 'recruiter_rate',    label: 'Fully-loaded recruiter $/hr', default: 85, unit: '$/hr' },
+    ]},
+    { title: 'Certification — Mobilization Gap Avoidance', inputs: [
+      { id: 'mobs_year',    label: 'Mobilizations per year',         default: 18000, unit: 'mobs', key: true },
+      { id: 'cert_gap_base',  label: 'Mobs with cert-gap (baseline)', default: 0.08, unit: '%', pct: true },
+      { id: 'cert_gap_future', label: 'Mobs with cert-gap (future)',  default: 0.03, unit: '%', pct: true, key: true },
+      { id: 'cert_recovery_cost', label: 'Avg recovery cost per cert-gap mob', default: 2800, unit: '$' },
+      { id: 'cert_npt_rate', label: '% of gaps that slip to location',   default: 0.15, unit: '%', pct: true },
+      { id: 'cert_npt_cost', label: 'Customer NPT exposure per slipped gap',  default: 25000, unit: '$' },
+    ]},
+    { title: 'JD Refresh & Recruiting Quality', inputs: [
+      { id: 'jds_in_scope',    label: 'Active JDs in scope',            default: 150, unit: 'JDs' },
+      { id: 'jd_rewrite_hrs',  label: 'Hours per current-state rewrite', default: 40, unit: 'hrs' },
+      { id: 'jd_refreshes',    label: 'JDs refreshed per year',         default: 50, unit: 'JDs', key: true },
+      { id: 'jd_future_hrs',   label: 'Hours per future-state review',  default: 8,  unit: 'hrs' },
+      { id: 'hrbp_rate',       label: 'Fully-loaded HRBP $/hr',         default: 110, unit: '$/hr' },
+    ]},
+    { title: 'Training — Capability Uplift', inputs: [
+      { id: 'training_hrs_fte',        label: 'Training hrs per FTE / yr (baseline)', default: 60, unit: 'hrs' },
+      { id: 'training_waste',          label: '% training that fails to close a gap', default: 0.40, unit: '%', pct: true },
+      { id: 'training_waste_reduction', label: 'Reduction in wasted training hrs',    default: 0.40, unit: '%', pct: true, key: true },
+      { id: 'training_hr_cost',        label: 'Cost per training hour (LMS + labor)', default: 75, unit: '$/hr' },
+    ]},
+    { title: 'Field Alignment — Coordinator & DM Time', inputs: [
+      { id: 'align_hrs_week',   label: 'Coordinator alignment hrs/week (baseline)', default: 8,   unit: 'hrs', key: true },
+      { id: 'align_hrs_future', label: 'Coordinator alignment hrs/week (future)',   default: 1.5, unit: 'hrs', key: true },
+      { id: 'coord_rate',       label: 'Fully-loaded coordinator $/hr',             default: 75,  unit: '$/hr' },
+      { id: 'dm_hrs_week',      label: 'District Manager alignment hrs/week (baseline)', default: 3,   unit: 'hrs' },
+      { id: 'dm_hrs_future',    label: 'District Manager alignment hrs/week (future)',   default: 0.5, unit: 'hrs' },
+      { id: 'dm_rate',          label: 'Fully-loaded District Manager $/hr',        default: 180, unit: '$/hr' },
+      { id: 'districts',        label: 'Districts in scope (alignment scales with)', default: 45, unit: 'districts' },
+    ]},
+    { title: 'Cohere North Platform', inputs: [
+      { id: 'users_y1',    label: 'Users — Year 1', default: 100, unit: 'users', key: true },
+      { id: 'users_y2',    label: 'Users — Year 2', default: 900, unit: 'users', key: true },
+      { id: 'users_y3',    label: 'Users — Year 3', default: 2500, unit: 'users', key: true },
+      { id: 'fee_y1',      label: 'Cohere fee — Year 1', default: 250000, unit: '$', key: true },
+      { id: 'fee_y2',      label: 'Cohere fee — Year 2', default: 1400000, unit: '$', key: true },
+      { id: 'fee_y3',      label: 'Cohere fee — Year 3', default: 3500000, unit: '$', key: true },
+      { id: 'rf_y1',       label: 'Value realization — Y1', default: 0.50, unit: '%', pct: true, key: true },
+      { id: 'rf_y2',       label: 'Value realization — Y2', default: 0.80, unit: '%', pct: true, key: true },
+      { id: 'rf_y3',       label: 'Value realization — Y3', default: 1.00, unit: '%', pct: true, key: true },
+    ]},
+  ],
+  compute(i) {
+    // Full-realization annual per-category value
+
+    // Driver 1: Recruiting
+    const daysSavedPerReq = i.ttf_base - i.ttf_future;
+    const vacancyAnnual = i.reqs_year * daysSavedPerReq * i.vacancy_cost_day;
+    const recruiterTimeAnnual = i.reqs_year * i.recruiter_hrs * i.recruiter_rate;
+    const recruitingBase = vacancyAnnual + recruiterTimeAnnual;
+
+    // Driver 2: Certification gap avoidance
+    const gapRateDelta = i.cert_gap_base - i.cert_gap_future;
+    const recoveryAnnual = i.mobs_year * gapRateDelta * i.cert_recovery_cost;
+    const nptAnnual = i.mobs_year * gapRateDelta * i.cert_npt_rate * i.cert_npt_cost;
+    const certBase = recoveryAnnual + nptAnnual;
+
+    // Driver 3: JD refresh (annual run-rate)
+    const jdHoursSaved = i.jd_refreshes * (i.jd_rewrite_hrs - i.jd_future_hrs);
+    const jdBase = jdHoursSaved * i.hrbp_rate;
+
+    // Driver 4: Training uplift (annual)
+    const wastedHoursYear = i.ftes * i.training_hrs_fte * i.training_waste;
+    const reclaimedHoursYear = wastedHoursYear * i.training_waste_reduction;
+    const trainingBase = reclaimedHoursYear * i.training_hr_cost;
+
+    // Driver 5: Field alignment — scales with districts
+    const weeksPerYear = 52;
+    const coordHoursAnnual = (i.align_hrs_week - i.align_hrs_future) * weeksPerYear * i.districts;
+    const dmHoursAnnual    = (i.dm_hrs_week - i.dm_hrs_future) * weeksPerYear * i.districts;
+    const alignmentBase = (coordHoursAnnual * i.coord_rate) + (dmHoursAnnual * i.dm_rate);
+
+    const years = [
+      { rf: i.rf_y1, users: i.users_y1, fee: i.fee_y1 },
+      { rf: i.rf_y2, users: i.users_y2, fee: i.fee_y2 },
+      { rf: i.rf_y3, users: i.users_y3, fee: i.fee_y3 },
+    ];
+
+    const rows = years.map(y => ({
+      recruiting: recruitingBase * y.rf,
+      cert:       certBase * y.rf,
+      jd:         jdBase * y.rf,
+      training:   trainingBase * y.rf,
+      alignment:  alignmentBase * y.rf,
+      users:      y.users,
+      fee:        y.fee,
+    }));
+    rows.forEach(r => {
+      r.gross = r.recruiting + r.cert + r.jd + r.training + r.alignment;
+      r.net = r.gross - r.fee;
+      r.roi = r.gross / (r.fee || 1);
+    });
+
+    return {
+      years: rows,
+      drivers: [
+        { name: 'Recruiting & time-to-fill',   key: 'recruiting' },
+        { name: 'Certification gap avoidance', key: 'cert' },
+        { name: 'JD refresh efficiency',       key: 'jd' },
+        { name: 'Training capability uplift',  key: 'training' },
+        { name: 'Field alignment hours',       key: 'alignment' },
+      ],
+      context: {
+        daysSavedPerReq,
+        gapRateDelta,
+      }
+    };
+  }
+};
+
+
+const USE_CASES = [UC_FIELD, UC_SAFETY, UC_PROD, UC_JOBPLAN, UC_WORKFORCE];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  activeId: 'field',
+  values: {},  // {useCaseId: {inputId: value}}
+};
+
+// Initialize defaults
+USE_CASES.forEach(uc => {
+  state.values[uc.id] = {};
+  uc.sections.forEach(s => s.inputs.forEach(inp => {
+    state.values[uc.id][inp.id] = inp.default;
+  }));
+});
+
+// ============================================================
+// FORMATTING
+// ============================================================
+function fmtUSD(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return `$${(n/1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `$${(n/1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `$${(n/1e3).toFixed(0)}K`;
+  return `$${n.toFixed(0)}`;
+}
+function fmtUSDFull(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+function fmtNum(n, decimals = 0) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+function fmtPct(n, decimals = 1) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return (n * 100).toFixed(decimals) + '%';
+}
+function fmtROI(n) {
+  if (n === null || n === undefined || isNaN(n) || !isFinite(n)) return '—';
+  return n.toFixed(1) + 'x';
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+function renderSidebar() {
+  const el = document.getElementById('usecase-list');
+  el.innerHTML = USE_CASES.map(uc => `
+    <button class="usecase-btn ${uc.id === state.activeId ? 'active' : ''}" data-id="${uc.id}">
+      ${uc.icon}
+      <div class="usecase-body">
+        <div class="usecase-name">${uc.name}</div>
+        <div class="usecase-meta">${uc.meta}</div>
+      </div>
+    </button>
+  `).join('');
+  el.querySelectorAll('.usecase-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.activeId = btn.dataset.id;
+      renderAll();
+    });
+  });
+}
+
+function renderHeader() {
+  const uc = USE_CASES.find(u => u.id === state.activeId);
+  document.getElementById('uc-header').innerHTML = `
+    <div class="uc-eyebrow">${uc.eyebrow}</div>
+    <h1 class="uc-title">${uc.title}</h1>
+    <p class="uc-description">${uc.description}</p>
+  `;
+}
+
+function renderInputs() {
+  const uc = USE_CASES.find(u => u.id === state.activeId);
+  const vals = state.values[uc.id];
+  const body = document.getElementById('inputs-body');
+  const total = uc.sections.reduce((s, sec) => s + sec.inputs.length, 0);
+  document.getElementById('inputs-count').textContent = `${total} inputs`;
+
+  body.innerHTML = uc.sections.map(sec => `
+    <div class="input-section">
+      <div class="section-title">${sec.title}</div>
+      ${sec.inputs.map(inp => {
+        const isPct = inp.pct;
+        const raw = vals[inp.id];
+        const display = isPct ? (raw * 100).toFixed(2).replace(/\.?0+$/, '') : raw;
+        return `
+        <div class="input-group">
+          <div class="input-label">
+            ${inp.label}${inp.key ? '<span class="key-marker"></span>' : ''}
+          </div>
+          <div class="input-control">
+            <input
+              type="number"
+              class="input-field ${inp.key ? 'key' : ''}"
+              data-id="${inp.id}"
+              data-pct="${!!isPct}"
+              value="${display}"
+              step="${isPct ? '0.1' : (Math.abs(raw) < 1 ? '0.01' : (Math.abs(raw) > 100000 ? '10000' : '1'))}"
+            >
+            <span class="input-unit">${inp.unit}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+
+  body.querySelectorAll('input.input-field').forEach(field => {
+    field.addEventListener('input', (e) => {
+      const id = e.target.dataset.id;
+      const isPct = e.target.dataset.pct === 'true';
+      let v = parseFloat(e.target.value);
+      if (isNaN(v)) return;
+      if (isPct) v = v / 100;
+      state.values[uc.id][id] = v;
+      renderResults();
+    });
+  });
+}
+
+function driverColor(idx, total) {
+  // Warm amber-to-deep palette for drivers
+  const palette = [
+    '#f4c27a', '#e8a34d', '#c98432', '#a36821', '#7d5015', '#5a3a0f'
+  ];
+  return palette[idx % palette.length];
+}
+
+function renderResults() {
+  const uc = USE_CASES.find(u => u.id === state.activeId);
+  const result = uc.compute(state.values[uc.id]);
+  const body = document.getElementById('results-body');
+
+  // Store for export
+  state.lastResult = result;
+
+  const threeYr = {
+    gross: result.years.reduce((s, y) => s + y.gross, 0),
+    fee:   result.years.reduce((s, y) => s + y.fee, 0),
+    net:   result.years.reduce((s, y) => s + y.net, 0),
+  };
+  const blendedROI = threeYr.gross / (threeYr.fee || 1);
+  const boedAnnual = result.years.map(y => y.boedRecovered).filter(x => x !== undefined);
+
+  // Hero metrics
+  let heroHTML = `
+    <div class="hero-metrics">
+      <div class="hero-metric">
+        <div class="hero-label">3-Yr Gross Value</div>
+        <div class="hero-value accent">${fmtUSD(threeYr.gross)}</div>
+        <div class="hero-detail">Cumulative customer value before Cohere fees</div>
+      </div>
+      <div class="hero-metric">
+        <div class="hero-label">Blended ROI</div>
+        <div class="hero-value roi">${fmtROI(blendedROI)}</div>
+        <div class="hero-detail">Gross value ÷ 3-yr Cohere fees</div>
+      </div>
+      <div class="hero-metric">
+        <div class="hero-label">3-Yr Net Value</div>
+        <div class="hero-value">${fmtUSD(threeYr.net)}</div>
+        <div class="hero-detail">After ${fmtUSD(threeYr.fee)} in platform fees</div>
+      </div>
+      <div class="hero-metric">
+        <div class="hero-label">Year 1 Payback</div>
+        <div class="hero-value">${(result.years[0].fee / (result.years[0].gross / 12)).toFixed(1)}<span class="sub">mo</span></div>
+        <div class="hero-detail">Months to recover pilot fee at Y1 run-rate</div>
+      </div>
+    </div>
+  `;
+
+  // Year-by-year table
+  let yearHTML = `
+    <div class="year-table">
+      <div class="year-table-header">
+        <div>Metric</div><div>Year 1</div><div>Year 2</div><div>Year 3</div><div>3-Yr</div>
+      </div>
+      <div class="year-table-row">
+        <div>Users (avg.)</div>
+        <div>${fmtNum(result.years[0].users)}</div>
+        <div>${fmtNum(result.years[1].users)}</div>
+        <div>${fmtNum(result.years[2].users)}</div>
+        <div>—</div>
+      </div>
+      ${boedAnnual.length ? `
+      <div class="year-table-row highlight">
+        <div>BOE/d recovered</div>
+        <div>${fmtNum(result.years[0].boedRecovered)}</div>
+        <div>${fmtNum(result.years[1].boedRecovered)}</div>
+        <div>${fmtNum(result.years[2].boedRecovered)}</div>
+        <div>—</div>
+      </div>` : ''}
+      <div class="year-table-row">
+        <div>Gross value</div>
+        <div>${fmtUSD(result.years[0].gross)}</div>
+        <div>${fmtUSD(result.years[1].gross)}</div>
+        <div>${fmtUSD(result.years[2].gross)}</div>
+        <div>${fmtUSD(threeYr.gross)}</div>
+      </div>
+      <div class="year-table-row">
+        <div>Cohere fee</div>
+        <div>${fmtUSD(result.years[0].fee)}</div>
+        <div>${fmtUSD(result.years[1].fee)}</div>
+        <div>${fmtUSD(result.years[2].fee)}</div>
+        <div>${fmtUSD(threeYr.fee)}</div>
+      </div>
+      <div class="year-table-row total">
+        <div>Net value</div>
+        <div>${fmtUSD(result.years[0].net)}</div>
+        <div>${fmtUSD(result.years[1].net)}</div>
+        <div>${fmtUSD(result.years[2].net)}</div>
+        <div>${fmtUSD(threeYr.net)}</div>
+      </div>
+      <div class="year-table-row total">
+        <div>ROI</div>
+        <div>${fmtROI(result.years[0].roi)}</div>
+        <div>${fmtROI(result.years[1].roi)}</div>
+        <div>${fmtROI(result.years[2].roi)}</div>
+        <div>${fmtROI(blendedROI)}</div>
+      </div>
+    </div>
+  `;
+
+  // Driver breakdown (3-yr)
+  const driverTotals = result.drivers.map(d => {
+    const total = result.years.reduce((s, y) => s + (y[d.key] || 0), 0);
+    return { ...d, total };
+  }).sort((a, b) => b.total - a.total);
+  const driverMax = Math.max(...driverTotals.map(d => d.total), 1);
+
+  let driverHTML = `
+    <div style="margin-top: 24px;">
+      <div class="section-title" style="margin-bottom: 14px;">Value drivers · 3-year</div>
+      <div class="driver-list">
+        ${driverTotals.map(d => `
+          <div class="driver-item">
+            <div class="driver-header">
+              <div class="driver-name">${d.name}</div>
+              <div class="driver-value">${fmtUSD(d.total)}</div>
+            </div>
+            <div class="driver-subline">
+              <span>${fmtPct(d.total / threeYr.gross)}</span>
+              <span>${fmtUSDFull(d.total)}</span>
+            </div>
+            <div class="driver-bar">
+              <div class="driver-bar-fill" style="width: ${(d.total/driverMax*100).toFixed(1)}%;"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  // Stacked bar chart by year, by driver
+  const yearMax = Math.max(...result.years.map(y => y.gross), 1);
+  const feeMax = Math.max(...result.years.map(y => y.fee), 1);
+  const chartMax = Math.max(yearMax, feeMax);
+
+  let chartHTML = `
+    <div class="chart-wrap">
+      <div class="chart-title">Value Build — Stacked by Driver</div>
+      <div class="chart-bars">
+        ${result.years.map((y, yi) => {
+          const pct = (y.gross / chartMax) * 100;
+          let cum = 0;
+          const segments = result.drivers.map((d, di) => {
+            const v = y[d.key] || 0;
+            const segPct = (v / y.gross) * 100;
+            cum += segPct;
+            return `<div class="chart-segment" style="height: ${segPct}%; background: ${driverColor(di)}"></div>`;
+          }).join('');
+          return `
+            <div class="chart-bar-col">
+              <div class="chart-total">${fmtUSD(y.gross)}</div>
+              <div class="chart-stack" style="height: ${pct}%;">${segments}</div>
+              <div class="chart-label">Year ${yi+1}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div class="chart-legend">
+        ${result.drivers.map((d, i) => `
+          <div class="legend-item">
+            <div class="legend-swatch" style="background: ${driverColor(i)}"></div>
+            ${d.name}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  // Caveat
+  let caveatHTML = '';
+  if (uc.id === 'field') {
+    caveatHTML = `<div class="caveat"><strong>Context:</strong> Netback per bbl: <strong>$${result.context.netback.toFixed(2)}</strong> · Field-response events/yr: <strong>${fmtNum(result.context.eventsPerYear)}</strong>. Adjust oil price, NRI, and downtime reduction to flex the largest lever.</div>`;
+  } else if (uc.id === 'safety') {
+    caveatHTML = `<div class="caveat"><strong>Context:</strong> Derived incidents: <strong>${result.context.recordables.toFixed(1)}</strong> recordables, <strong>${result.context.ltis.toFixed(1)}</strong> lost-time / yr across <strong>${fmtNum(result.context.workforce)}</strong> workforce-equivalent. Premium savings phase in (0% / 50% / 100%).</div>`;
+  } else if (uc.id === 'prod') {
+    caveatHTML = `<div class="caveat"><strong>Context:</strong> Total baseline deferral: <strong>${fmtPct(result.context.totalDeferral, 2)}</strong> of production = <strong>${fmtNum(result.context.totalBoedBase)}</strong> BOE/d exposed · Effective netback post-haircuts: <strong>$${result.context.netback.toFixed(2)}</strong>/BOE.</div>`;
+  } else if (uc.id === 'jobplan') {
+    caveatHTML = `<div class="caveat"><strong>Context:</strong> Global annual jobs: <strong>${fmtNum(result.context.jobsYearFull)}</strong> · Planner hours saved per job: <strong>${fmtNum(result.context.hoursSavedPerJob, 1)}</strong>. Planner-hours savings and cycle-time revenue pull-forward are the largest levers.</div>`;
+  } else if (uc.id === 'workforce') {
+    caveatHTML = `<div class="caveat"><strong>Context:</strong> Days saved per req: <strong>${fmtNum(result.context.daysSavedPerReq, 0)}</strong> · Certification-gap reduction: <strong>${fmtPct(result.context.gapRateDelta, 1)}</strong>. Recruiting & time-to-fill typically dominates the value stack; certification-gap avoidance is the highest-leverage operational driver.</div>`;
+  }
+
+  body.innerHTML = heroHTML + yearHTML + driverHTML + chartHTML + caveatHTML;
+}
+
+
+function renderAll() {
+  renderSidebar();
+  renderHeader();
+  renderInputs();
+  renderResults();
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+document.getElementById('btn-reset').addEventListener('click', () => {
+  const uc = USE_CASES.find(u => u.id === state.activeId);
+  if (!confirm(`Reset all assumptions for "${uc.name}" to defaults?`)) return;
+  uc.sections.forEach(s => s.inputs.forEach(inp => {
+    state.values[uc.id][inp.id] = inp.default;
+  }));
+  renderAll();
+});
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const uc = USE_CASES.find(u => u.id === state.activeId);
+  const r = state.lastResult;
+
+  let text = `COHERE NORTH · VALUE APPRAISAL SNAPSHOT\n`;
+  text += `Use Case: ${uc.name}\n`;
+  text += `Generated: ${new Date().toLocaleString()}\n`;
+  text += `${'='.repeat(70)}\n\n`;
+
+  const threeYr = {
+    gross: r.years.reduce((s, y) => s + y.gross, 0),
+    fee:   r.years.reduce((s, y) => s + y.fee, 0),
+    net:   r.years.reduce((s, y) => s + y.net, 0),
+  };
+  text += `HEADLINE\n`;
+  text += `  3-Yr Gross Value:  ${fmtUSDFull(threeYr.gross)}\n`;
+  text += `  3-Yr Cohere Fees:  ${fmtUSDFull(threeYr.fee)}\n`;
+  text += `  3-Yr Net Value:    ${fmtUSDFull(threeYr.net)}\n`;
+  text += `  Blended ROI:       ${fmtROI(threeYr.gross / threeYr.fee)}\n\n`;
+  text += `BY YEAR\n`;
+  r.years.forEach((y, i) => {
+    text += `  Year ${i+1}: ${fmtNum(y.users).padStart(6)} users | Gross ${fmtUSDFull(y.gross).padStart(14)} | Fee ${fmtUSDFull(y.fee).padStart(11)} | ROI ${fmtROI(y.roi).padStart(7)}`;
+    if (y.boedRecovered !== undefined) text += ` | BOE/d ${fmtNum(y.boedRecovered).padStart(6)}`;
+    text += `\n`;
+  });
+  text += `\nDRIVER BREAKDOWN (3-Year)\n`;
+  r.drivers.forEach(d => {
+    const total = r.years.reduce((s, y) => s + (y[d.key] || 0), 0);
+    text += `  ${d.name.padEnd(32)} ${fmtUSDFull(total).padStart(14)} (${fmtPct(total/threeYr.gross)})\n`;
+  });
+
+  text += `\nASSUMPTIONS\n`;
+  uc.sections.forEach(sec => {
+    text += `  ${sec.title.toUpperCase()}\n`;
+    sec.inputs.forEach(inp => {
+      const v = state.values[uc.id][inp.id];
+      const disp = inp.pct ? fmtPct(v, 2) : (inp.unit === '$' ? fmtUSDFull(v) : fmtNum(v, (Math.abs(v) < 1 && v !== 0) ? 2 : 0) + ' ' + inp.unit);
+      text += `    ${inp.label.padEnd(48)} ${disp}\n`;
+    });
+  });
+
+  // Download as .txt
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cohere-north_${uc.id}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ============================================================
+// INITIALIZE
+// ============================================================
+renderAll();
+</script>
+</body>
+</html>
